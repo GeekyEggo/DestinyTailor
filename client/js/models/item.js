@@ -16,8 +16,8 @@
          * @param {Object} data The data of the item.
          * @param {Object} definitions The supporting definitions.
          */
-        function Item(data, definitions) {
-            var itemDefinition = definitions.items.hasOwnProperty(data.itemHash) ? definitions.items[data.itemHash] : {};
+        function Item(data) {
+            var itemDefinition = DestinyArmorDefinition.hasOwnProperty(data.itemHash) ? DestinyArmorDefinition[data.itemHash] : {};
 
             this.itemId = data.itemId;
             this.name = itemDefinition.itemName;
@@ -25,7 +25,7 @@
             this.itemTypeName = itemDefinition.itemTypeName;
 
             this.icon = itemDefinition.icon;
-            this.setPrimaryStat(data, definitions);
+            this.setPrimaryStat(data, DestinyStatDefinition);
             this.tierType = itemDefinition.tierType;
             this.tierTypeName = itemDefinition.tierTypeName;
 
@@ -45,7 +45,7 @@
                 this.primaryStatName = '';
             } else {
                 this.primaryStat = data.primaryStat.value;
-                this.primaryStatName = definitions.stats[data.primaryStat.statHash].statName;
+                this.primaryStatName = definitions[data.primaryStat.statHash].statName;
             }
         };
 

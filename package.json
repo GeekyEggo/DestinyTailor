@@ -43,7 +43,9 @@
     "node-cache": "^3.0.0",
     "request": "^2.65.0",
     "serve-favicon": "~2.2.1",
+    "sqlite3": "^3.1.4",
     "throng": "^4.0.0",
+    "unzip": "^0.1.11",
     "wiredep": "2.2.2"
   },
   "devDependencies": {
