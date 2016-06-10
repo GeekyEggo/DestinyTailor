@@ -5,6 +5,7 @@
 
 var fs = require('fs'),
     http = require('http'),
+    Promise = require('promise'),
     request = require('request'),
     sqlite3 = require('sqlite3').verbose(),
     unzip = require('unzip');
@@ -14,20 +15,6 @@ request.get({
     url: 'https://www.bungie.net/Platform/Destiny/Manifest/',
     headers: { 'X-API-Key': '10E792629C2A47E19356B8A79EEFA640' }
 }, onManifestResponse);
-
-/**
- * Writes a definition file, serializing the data to a JSON string.
- * @param {String} path The path of the file to write to.
- * @param {String} name The variable name.
- * @param {Object} data Object containing the definitions to serialize.
- */
-function writeDefinitionFile(path, name, data) {
-    var contents = 'var ' + name + ' = ' + JSON.stringify(data, null, 4) + ';',
-    stream = fs.createWriteStream(path);
-
-    stream.write(contents);
-    stream.end();
-}
 
 /**
  * Handles the response from requesting the manifest from Bungie.
@@ -40,13 +27,13 @@ function onManifestResponse(error, response, body) {
         version = parsedResponse.Response.version,
         language = 'en';
 
-    console.log('Downloading zip for ' + language + '.');
+    console.log('Downloading zip for ' + language + '...');
 
     var zipFilePath = 'manifest/' + language + '/manifest.zip';
     request.get('https://www.bungie.net' + parsedResponse.Response.mobileWorldContentPaths[language])
         .pipe(fs.createWriteStream(zipFilePath))
         .on('close', function () {
-            onManifestDownloaded(zipFilePath, language);
+            onManifestDownload(zipFilePath, language);
         });
 }
 
@@ -55,8 +42,8 @@ function onManifestResponse(error, response, body) {
  * @param {String} zipFilePath The file path to the compressed manifest.
  * @param {String} language The language of the manifest file.
  */
-function onManifestDownloaded(zipFilePath, language) {
-    console.log('Processing zip for ' + language);
+function onManifestDownload(zipFilePath, language) {
+    console.log('Processing zip for ' + language + '...');
 
     fs.createReadStream(zipFilePath)
         .pipe(unzip.Parse())
@@ -80,43 +67,107 @@ function onManifestDownloaded(zipFilePath, language) {
 function exportDefinitionsFromDb(dbFile, language) {
     var db = new sqlite3.Database(dbFile);
 
-    db.all('SELECT * FROM DestinyInventoryItemDefinition', function (err, rows) {
-        if (err) throw err;
+    getArmorDefinitions(db)
+        .then(appendStatDefinitions)
+        .then(function(result) {
+            var fileName = 'client/js/shared/definitions.js';
+            writeDefinitionFile(fileName, 'DEFINITIONS', result.definitions);
+            console.log('Saved to ' + fileName);
+        });
+}
 
-        var DestinyArmorDefinition = {};
+/**
+ * Gets the armor definitions and their required information from the database.
+ * @param {Object} db The manifest database.
+ * @returns {Object} A promise containing the database and the current definitions.
+ */
+function getArmorDefinitions(db) {
+    // define the definitions and add the armor object
+    var definitions = {};
+    definitions.ARMOR = {};
 
-        rows.forEach(function (row) {
-            var item = JSON.parse(row.json);
-
-            // Armor
-            if ((item.itemType === 2) || (item.itemTypeName === 'Mask')) {
-                DestinyArmorDefinition[item.itemHash] = {};
-                DestinyArmorDefinition[item.itemHash].itemName = item.itemName;
-                DestinyArmorDefinition[item.itemHash].itemTypeName = item.itemTypeName;
-                DestinyArmorDefinition[item.itemHash].itemDescription = item.itemDescription;
-                DestinyArmorDefinition[item.itemHash].icon = item.icon;
-                DestinyArmorDefinition[item.itemHash].tierType = item.tierType;
-                DestinyArmorDefinition[item.itemHash].tierTypeName = item.tierTypeName;
+    return new Promise(function(resolve, reject) {
+        // select the information from the database
+        db.all('SELECT * FROM DestinyInventoryItemDefinition', function (err, rows) {
+            if (err) {
+                throw err;
             }
 
+            // add each item when the type is 2, or the name is 'Mask' (event based)
+            rows.forEach(function (row) {
+                var item = JSON.parse(row.json);
+                if ((item.itemType === 2) || (item.itemTypeName === 'Mask')) {
+                    definitions.ARMOR[item.itemHash] = getItemData(item);
+                }
+            });
+
+            // resolve for the next chain
+            resolve({
+                db: db,
+                definitions: definitions
+            });
         });
-
-        writeDefinitionFile('client/js/shared/DestinyArmorDefinition.js', 'DestinyArmorDefinition', DestinyArmorDefinition);
     });
+}
 
-    db.all('SELECT * FROM DestinyStatDefinition', function (err, rows) {
-        if (err) throw err;
+/**
+ * Gets the required information from the complete item definitions.
+ * @param {Object} itemDefinition The item definition from Bungie.
+ * @returns {Object} The required item information.
+ */
+function getItemData(itemDefinition) {
+    return {
+        itemName: itemDefinition.itemName,
+        itemTypeName: itemDefinition.itemTypeName,
+        itemDescription: itemDefinition.itemDescription,
+        icon: itemDefinition.icon,
+        tierType: itemDefinition.tierType,
+        tierTypeName:itemDefinition.tierTypeName
+    }
+}
 
-        var DestinyStatDefinition = {};
+/**
+ * Appends the stat definitions to an already existing extraction.
+ * @param {Object} result The current extraction results.
+ * @returns {Object} A promise containing the database and the current definitions.
+ */
+function appendStatDefinitions(result) {
+    // ensure we have definitions and the stats object
+    result.definitions = result.definitions || {};
+    result.definitions.STATS = {}
 
-        rows.forEach(function (row) {
-            var item = JSON.parse(row.json);
-            if (item.statHash && item.statName) {
-                DestinyStatDefinition[item.statHash] = {};
-                DestinyStatDefinition[item.statHash].statName = item.statName;
+    return new Promise(function(resolve, reject) {
+        // select all of the stat definitions
+        result.db.all('SELECT * FROM DestinyStatDefinition', function (err, rows) {
+            if (err) {
+                throw err;
             }
-        });
 
-        writeDefinitionFile('client/js/shared/DestinyStatDefinition.js', 'DestinyStatDefinition', DestinyStatDefinition);
+            rows.forEach(function (row) {
+                var stat = JSON.parse(row.json);
+
+                if (stat.statHash && stat.statName) {
+                    result.definitions.STATS[stat.statHash] = {
+                        statName: stat.statName
+                    };
+                }
+            });
+
+            resolve(result);
+        });
     });
+}
+
+/**
+ * Writes a definition file, serializing the data to a JSON string.
+ * @param {String} path The path of the file to write to.
+ * @param {String} name The variable name.
+ * @param {Object} data Object containing the definitions to serialize.
+ */
+function writeDefinitionFile(path, name, data) {
+    var contents = 'var ' + name + ' = ' + JSON.stringify(data, null, 4) + ';',
+    stream = fs.createWriteStream(path);
+
+    stream.write(contents);
+    stream.end();
 }
