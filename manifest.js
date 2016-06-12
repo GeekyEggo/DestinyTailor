@@ -10,6 +10,8 @@ var fs = require('fs'),
     sqlite3 = require('sqlite3').verbose(),
     unzip = require('unzip');
 
+var FILE_NAME = 'client/js/shared/definitions.js';
+
 // load the manifest from Bungie
 request.get({
     url: 'https://www.bungie.net/Platform/Destiny/Manifest/',
@@ -67,90 +69,39 @@ function onManifestDownload(zipFilePath, language) {
 function exportDefinitionsFromDb(dbFile, language) {
     var db = new sqlite3.Database(dbFile);
 
-    getArmorDefinitions(db)
-        .then(appendStatDefinitions)
-        .then(function(result) {
-            var fileName = 'client/js/shared/definitions.js';
-            writeDefinitionFile(fileName, 'DEFINITIONS', result.definitions);
-            console.log('Saved to ' + fileName);
-        });
+    Promise.all([
+        getDefinitions(db, 'DestinyInventoryItemDefinition', 'ARMOR', 'itemHash', ['itemName', 'itemTypeName', 'itemDescription', 'icon', 'tierType', 'tierTypeName'], function(item) {
+            return item.itemType === 2 || item.itemTypeName === 'Mask';
+        }),
+        getDefinitions(db, 'DestinyStatDefinition', 'STATS', 'statHash', ['statName'], function(stat) {
+            return stat.statHash && stat.statName;
+        })
+    ]).then(writeDefinitionFile);
 }
 
 /**
- * Gets the armor definitions and their required information from the database.
- * @param {Object} db The manifest database.
- * @returns {Object} A promise containing the database and the current definitions.
+ * Maps the definition from the database row, and adds it to the dictionary.
+ * @param {Object} db The SQL database.
+ * @param {String} tableName The table containing the definitions.
+ * @param {String} alias The alias used to store the definitions against the top level object.
+ * @param {String} key The key of each entry.
+ * @param {String[]} columns Columns to map from the SQL data row.
+ * @param {Function} isValidEntry Determines if the SQL data row is a valid definition that we want to map.
  */
-function getArmorDefinitions(db) {
-    // define the definitions and add the armor object
-    var definitions = {};
-    definitions.ARMOR = {};
-
-    return new Promise(function(resolve, reject) {
-        // select the information from the database
-        db.all('SELECT * FROM DestinyInventoryItemDefinition', function (err, rows) {
-            if (err) {
-                throw err;
-            }
-
-            // add each item when the type is 2, or the name is 'Mask' (event based)
-            rows.forEach(function (row) {
-                var item = JSON.parse(row.json);
-                if ((item.itemType === 2) || (item.itemTypeName === 'Mask')) {
-                    definitions.ARMOR[item.itemHash] = getItemData(item);
-                }
-            });
-
-            // resolve for the next chain
-            resolve({
-                db: db,
-                definitions: definitions
-            });
-        });
-    });
-}
-
-/**
- * Gets the required information from the complete item definitions.
- * @param {Object} itemDefinition The item definition from Bungie.
- * @returns {Object} The required item information.
- */
-function getItemData(itemDefinition) {
-    return {
-        itemName: itemDefinition.itemName,
-        itemTypeName: itemDefinition.itemTypeName,
-        itemDescription: itemDefinition.itemDescription,
-        icon: itemDefinition.icon,
-        tierType: itemDefinition.tierType,
-        tierTypeName:itemDefinition.tierTypeName
-    }
-}
-
-/**
- * Appends the stat definitions to an already existing extraction.
- * @param {Object} result The current extraction results.
- * @returns {Object} A promise containing the database and the current definitions.
- */
-function appendStatDefinitions(result) {
-    // ensure we have definitions and the stats object
-    result.definitions = result.definitions || {};
-    result.definitions.STATS = {}
+function getDefinitions(db, tableName, alias, key, columns, isValidEntry) {
+    var result = {};
+    result[alias] = {};
 
     return new Promise(function(resolve, reject) {
         // select all of the stat definitions
-        result.db.all('SELECT * FROM DestinyStatDefinition', function (err, rows) {
+        db.all('SELECT * FROM ' + tableName, function (err, rows) {
             if (err) {
                 throw err;
             }
 
+            // map each row
             rows.forEach(function (row) {
-                var stat = JSON.parse(row.json);
-
-                if (stat.statHash && stat.statName) {
-                    result.definitions.STATS[stat.statHash] = {
-                        statName: stat.statName
-                    };
-                }
+                mapDefinition(result[alias], row, key, columns, isValidEntry);
             });
 
             resolve(result);
@@ -159,15 +110,50 @@ function appendStatDefinitions(result) {
 }
 
 /**
- * Writes a definition file, serializing the data to a JSON string.
- * @param {String} path The path of the file to write to.
- * @param {String} name The variable name.
- * @param {Object} data Object containing the definitions to serialize.
+ * Maps the definition from the database row, and adds it to the dictionary.
+ * @param {Object} dictionary The dictionary containing all of the definitions for the type.
+ * @param {Object} row The SQL data row.
+ * @param {String} key The key of each entry.
+ * @param {String[]} columns Columns to map from the SQL data row.
+ * @param {Function} isValidEntry Determines if the SQL data row is a valid definition that we want to map.
  */
-function writeDefinitionFile(path, name, data) {
-    var contents = 'var ' + name + ' = ' + JSON.stringify(data, null, 4) + ';',
-    stream = fs.createWriteStream(path);
+function mapDefinition(dictionary, row, key, columns, isValidEntry) {
+    var definition = JSON.parse(row.json);
 
+    // only map the definition if it is considered valid
+    if (isValidEntry(definition)) {
+        var hash = definition[key];
+        dictionary[hash] = {};
+
+        // map each of the columns
+        columns.forEach(function(column) {
+            dictionary[hash][column] = definition[column];
+        });
+    }
+}
+
+/**
+ * Writes a definition file, serializing the data to a JSON string.
+ * @param {Object[]} definitionResults The definitions to be written to file.
+ */
+function writeDefinitionFile(definitionResults) {
+    var definitions = {};
+
+    // re-map the results to an object
+    definitionResults.forEach(function(definition) {
+        for (var key in definition) {
+            definitions[key] = definition[key];
+        }
+    })
+
+    // determine the contents and open a write stream
+    var contents = "(function() { 'use strict'; var app = angular.module('main').constant('BUNGIE_DEFINITIONS', " + JSON.stringify(definitions, null, 4) + "); })();"
+    //var contents = 'var BUNGIE_DEFINITIONS = ' + JSON.stringify(definitions, null, 4) + ';',
+        stream = fs.createWriteStream(FILE_NAME);
+
+    // write the defintion file
     stream.write(contents);
     stream.end();
+
+    console.log('Manifest saved to ' + FILE_NAME + '.');
 }

@@ -1,4 +1,4 @@
-var DEFINITIONS = {
+(function() { 'use strict'; var app = angular.module('main').constant('BUNGIE_DEFINITIONS', {
     "ARMOR": {
         "19464": {
             "itemName": "Thanatonaut's Bond",
@@ -19118,4 +19118,4 @@ var DEFINITIONS = {
             "statName": "Rate of Fire"
         }
     }
-};
+}); })();
