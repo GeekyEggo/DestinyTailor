@@ -2,22 +2,22 @@
     'use strict';
 
     angular.module('main').factory('Item', Model);
-    Model.$inject = ['Range'];
+    Model.$inject = ['BUNGIE_DEFINITIONS', 'Range'];
 
     /**
      * Defines the Item model.
+     * @param {Object} BUNGIE_DEFINITIONS The definitions from the Bungie manifest.
      * @param {Function} Range The constructor for a range.
      * @returns {Function} The constructor for an item.
      */
-    function Model(Range) {
+    function Model(BUNGIE_DEFINITIONS, Range) {
         /**
          * Provides a constructor for the Item model.
          * @constructor
          * @param {Object} data The data of the item.
-         * @param {Object} definitions The supporting definitions.
          */
-        function Item(data, definitions) {
-            var itemDefinition = definitions.items.hasOwnProperty(data.itemHash) ? definitions.items[data.itemHash] : {};
+        function Item(data) {
+            var itemDefinition = BUNGIE_DEFINITIONS.ARMOR.hasOwnProperty(data.itemHash) ? BUNGIE_DEFINITIONS.ARMOR[data.itemHash] : {};
 
             this.itemId = data.itemId;
             this.name = itemDefinition.itemName;
@@ -25,7 +25,7 @@
             this.itemTypeName = itemDefinition.itemTypeName;
 
             this.icon = itemDefinition.icon;
-            this.setPrimaryStat(data, definitions);
+            this.setPrimaryStat(data);
             this.tierType = itemDefinition.tierType;
             this.tierTypeName = itemDefinition.tierTypeName;
 
@@ -37,15 +37,14 @@
         /**
          * Sets the primary stat on the item.
          * @param {Object} data The data of the object.
-         * @param {Object} definitions The definitions for the item.
          */
-        Item.prototype.setPrimaryStat = function(data, definitions) {
+        Item.prototype.setPrimaryStat = function(data) {
             if (data.primaryStat === undefined) {
                 this.primaryStat = 0;
                 this.primaryStatName = '';
             } else {
                 this.primaryStat = data.primaryStat.value;
-                this.primaryStatName = definitions.stats[data.primaryStat.statHash].statName;
+                this.primaryStatName = BUNGIE_DEFINITIONS.STATS[data.primaryStat.statHash].statName;
             }
         };
 

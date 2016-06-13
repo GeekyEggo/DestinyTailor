@@ -99,6 +99,7 @@ config.inject = {
             '**/app.module.js',
             '**/app.constants.js',
             '**/app.routes.js',
+            '**/shared/*.js',
             '**/models/*.js',
             '**/services/*.js',
             '**/**/*.js'

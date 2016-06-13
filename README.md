@@ -10,6 +10,8 @@ A "stat profile" is the term we use for a specific combinations of stats on your
 
 - Performance improvements.
 - Added error warnings when Bungie API calls fail.
+- **0.5.1**
+ - Added Bungie manifest file (removing the need of `?definitions=true`). Many thanks to @v-fedorov.
 
 ### 0.4
 

@@ -45,7 +45,7 @@
          */
         function getInventorySummary(membershipType, membershipId, characterId) {
             return httpUtils.get(
-                '/Platform/Destiny/{membershipType}/Account/{membershipId}/Character/{characterId}/Inventory/Summary/?definitions=true',
+                '/Platform/Destiny/{membershipType}/Account/{membershipId}/Character/{characterId}/Inventory/Summary/',
                 {
                     membershipType: membershipType,
                     membershipId: membershipId,
