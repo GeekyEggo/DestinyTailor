@@ -5,18 +5,28 @@
 
 var fs = require('fs'),
     http = require('http'),
+    mkdirp = require('mkdirp'),
+    path = require('path'),
     Promise = require('promise'),
     request = require('request'),
     sqlite3 = require('sqlite3').verbose(),
     unzip = require('unzip');
 
-var FILE_NAME = 'client/js/shared/definitions.js';
+var TEMP_FOLDER = './.tmp/manifest/',
+    FILE_NAME = 'client/js/shared/definitions.js';
 
-// load the manifest from Bungie
-request.get({
-    url: 'https://www.bungie.net/Platform/Destiny/Manifest/',
-    headers: { 'X-API-Key': '10E792629C2A47E19356B8A79EEFA640' }
-}, onManifestResponse);
+// ensure we have the temporary folder
+mkdirp(TEMP_FOLDER, function (err) {
+    if (err) {
+        console.error(err);
+        return;
+    }
+    // load the manifest from Bungie
+    request.get({
+        url: 'https://www.bungie.net/Platform/Destiny/Manifest/',
+        headers: { 'X-API-Key': '10E792629C2A47E19356B8A79EEFA640' }
+    }, onManifestResponse);
+});
 
 /**
  * Handles the response from requesting the manifest from Bungie.
@@ -31,12 +41,17 @@ function onManifestResponse(error, response, body) {
 
     console.log('Downloading zip for ' + language + '...');
 
-    var zipFilePath = 'manifest/' + language + '/manifest.zip';
-    request.get('https://www.bungie.net' + parsedResponse.Response.mobileWorldContentPaths[language])
-        .pipe(fs.createWriteStream(zipFilePath))
-        .on('close', function () {
-            onManifestDownload(zipFilePath, language);
-        });
+    // create the temporary folder for the language
+    var languageFolder = path.join(TEMP_FOLDER, language);
+    mkdirp(languageFolder, function() {
+        // request the contents and create the zip file
+        var zipFilePath = path.join(languageFolder, 'manifest.zip');
+        request.get('https://www.bungie.net' + parsedResponse.Response.mobileWorldContentPaths[language])
+            .pipe(fs.createWriteStream(zipFilePath))
+            .on('close', function () {
+                onManifestDownload(zipFilePath, language);
+            });
+    });
 }
 
 /**

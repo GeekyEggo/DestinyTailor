@@ -39,6 +39,7 @@
     "gulp-useref": "2.1.0",
     "hbs": "~2.9.0",
     "merge-stream": "^1.0.0",
+    "mkdirp": "^0.5.1",
     "morgan": "~1.5.3",
     "node-cache": "^3.0.0",
     "promise": "^7.1.1",
