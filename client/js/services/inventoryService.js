@@ -41,11 +41,11 @@
          * @returns {Object} The inventory with the basic information.
          */
         function getNewInventory(character, result) {
-            var inventory = new Inventory(character, result.data.Response.definitions);
+            var inventory = new Inventory(character);
 
             // add each item, once we've transformed it slightly
-            result.data.Response.data.items.forEach(function(data) {
-                var item = new Item(data, result.data.Response.definitions);
+            result.data.Response.data.buckets.Equippable.forEach(function(equippable) {
+                var item = new Item(equippable);
                 inventory.setItem(item);
             });
 

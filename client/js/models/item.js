@@ -14,18 +14,19 @@
         /**
          * Provides a constructor for the Item model.
          * @constructor
-         * @param {Object} data The data of the item.
+         * @param {Object} equippable The data of the item.
          */
-        function Item(data) {
-            var itemDefinition = BUNGIE_DEFINITIONS.ARMOR.hasOwnProperty(data.itemHash) ? BUNGIE_DEFINITIONS.ARMOR[data.itemHash] : {};
+        function Item(equippable) {
+            var item = equippable.items[0];
+            var itemDefinition = BUNGIE_DEFINITIONS.ARMOR.hasOwnProperty(item.itemHash) ? BUNGIE_DEFINITIONS.ARMOR[item.itemHash] : {};
 
-            this.itemId = data.itemId;
+            this.itemId = item.itemInstanceId;
             this.name = itemDefinition.itemName;
-            this.bucketHash = data.bucketHash;
+            this.bucketHash = equippable.bucketHash;
             this.itemTypeName = itemDefinition.itemTypeName;
 
             this.icon = itemDefinition.icon;
-            this.setPrimaryStat(data);
+            this.setPrimaryStat(item);
             this.tierType = itemDefinition.tierType;
             this.tierTypeName = itemDefinition.tierTypeName;
 
@@ -36,15 +37,15 @@
 
         /**
          * Sets the primary stat on the item.
-         * @param {Object} data The data of the object.
+         * @param {Object} item The data of the equippable item.
          */
-        Item.prototype.setPrimaryStat = function(data) {
-            if (data.primaryStat === undefined) {
+        Item.prototype.setPrimaryStat = function(item) {
+            if (item.primaryStat === undefined) {
                 this.primaryStat = 0;
                 this.primaryStatName = '';
             } else {
-                this.primaryStat = data.primaryStat.value;
-                this.primaryStatName = BUNGIE_DEFINITIONS.STATS[data.primaryStat.statHash].statName;
+                this.primaryStat = item.primaryStat.value;
+                this.primaryStatName = BUNGIE_DEFINITIONS.STATS[item.primaryStat.statHash].statName;
             }
         };
 
