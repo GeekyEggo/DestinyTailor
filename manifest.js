@@ -12,7 +12,7 @@ var fs = require('fs'),
     sqlite3 = require('sqlite3').verbose(),
     unzip = require('unzip');
 
-var TEMP_FOLDER = './tmp/manifest/',
+var TEMP_FOLDER = './.tmp/manifest/',
     FILE_NAME = 'client/js/shared/definitions.js';
 
 // ensure we have the temporary folder
