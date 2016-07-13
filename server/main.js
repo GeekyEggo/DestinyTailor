@@ -28,7 +28,7 @@ function main() {
     // setup the api routes
     app.use('/Platform/Destiny/*?', function(req, res) {
         var options = {
-            url: 'http://www.bungie.net' + req.originalUrl,
+            url: 'https://www.bungie.net' + req.originalUrl,
             headers: {
                 'Content-Type': 'application/json',
                 'X-API-KEY': config.apiKey
