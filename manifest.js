@@ -5,18 +5,28 @@
 
 var fs = require('fs'),
     http = require('http'),
+    mkdirp = require('mkdirp'),
+    path = require('path'),
     Promise = require('promise'),
     request = require('request'),
     sqlite3 = require('sqlite3').verbose(),
     unzip = require('unzip');
 
-var FILE_NAME = 'client/js/shared/definitions.js';
+var TEMP_FOLDER = './tmp/manifest/',
+    FILE_NAME = 'client/js/shared/definitions.js';
 
-// load the manifest from Bungie
-request.get({
-    url: 'https://www.bungie.net/Platform/Destiny/Manifest/',
-    headers: { 'X-API-Key': '10E792629C2A47E19356B8A79EEFA640' }
-}, onManifestResponse);
+// ensure we have the temporary folder
+mkdirp(TEMP_FOLDER, function (err) {
+    if (err) {
+        console.error(err);
+        return;
+    }
+    // load the manifest from Bungie
+    request.get({
+        url: 'https://www.bungie.net/Platform/Destiny/Manifest/',
+        headers: { 'X-API-Key': '10E792629C2A47E19356B8A79EEFA640' }
+    }, onManifestResponse);
+});
 
 /**
  * Handles the response from requesting the manifest from Bungie.
@@ -31,12 +41,17 @@ function onManifestResponse(error, response, body) {
 
     console.log('Downloading zip for ' + language + '...');
 
-    var zipFilePath = 'manifest/' + language + '/manifest.zip';
-    request.get('https://www.bungie.net' + parsedResponse.Response.mobileWorldContentPaths[language])
-        .pipe(fs.createWriteStream(zipFilePath))
-        .on('close', function () {
-            onManifestDownload(zipFilePath, language);
-        });
+    // create the temporary folder for the language
+    var languageFolder = path.join(TEMP_FOLDER, language);
+    mkdirp(languageFolder, function() {
+        // request the contents and create the zip file
+        var zipFilePath = path.join(languageFolder, 'manifest.zip');
+        request.get('https://www.bungie.net' + parsedResponse.Response.mobileWorldContentPaths[language])
+            .pipe(fs.createWriteStream(zipFilePath))
+            .on('close', function () {
+                onManifestDownload(zipFilePath, language);
+            });
+    });
 }
 
 /**
@@ -75,6 +90,9 @@ function exportDefinitionsFromDb(dbFile, language) {
         }),
         getDefinitions(db, 'DestinyStatDefinition', 'STATS', 'statHash', ['statName'], function(stat) {
             return stat.statHash && stat.statName;
+        }),
+        getDefinitions(db, 'DestinyTalentGridDefinition', 'TALENT_GRID', 'gridHash', talentGridMapper, function(definition) {
+            return definition.gridHash && definition.nodes;
         })
     ]).then(writeDefinitionFile);
 }
@@ -85,23 +103,32 @@ function exportDefinitionsFromDb(dbFile, language) {
  * @param {String} tableName The table containing the definitions.
  * @param {String} alias The alias used to store the definitions against the top level object.
  * @param {String} key The key of each entry.
- * @param {String[]} columns Columns to map from the SQL data row.
+ * @param {String[]|Function} mapper The mapper; either an array of columns, or a delegate to select the object.
  * @param {Function} isValidEntry Determines if the SQL data row is a valid definition that we want to map.
  */
-function getDefinitions(db, tableName, alias, key, columns, isValidEntry) {
+function getDefinitions(db, tableName, alias, key, mapper, isValidEntry) {
     var result = {};
     result[alias] = {};
 
     return new Promise(function(resolve, reject) {
+        // transform the mapper if we need to
+        if (Array.isArray(mapper)) {
+            mapper = getMapperFromColumns(mapper);
+        }
+
         // select all of the stat definitions
         db.all('SELECT * FROM ' + tableName, function (err, rows) {
             if (err) {
                 throw err;
             }
 
-            // map each row
+            // check each row, determining if we can map it
             rows.forEach(function (row) {
-                mapDefinition(result[alias], row, key, columns, isValidEntry);
+                var definition = JSON.parse(row.json);
+
+                if (isValidEntry(definition)) {
+                    result[alias][definition[key]] = mapper(definition);
+                }
             });
 
             resolve(result);
@@ -110,26 +137,38 @@ function getDefinitions(db, tableName, alias, key, columns, isValidEntry) {
 }
 
 /**
- * Maps the definition from the database row, and adds it to the dictionary.
- * @param {Object} dictionary The dictionary containing all of the definitions for the type.
- * @param {Object} row The SQL data row.
- * @param {String} key The key of each entry.
- * @param {String[]} columns Columns to map from the SQL data row.
- * @param {Function} isValidEntry Determines if the SQL data row is a valid definition that we want to map.
+ * Transforms a mapper that is represented as an array of columns, to a delegate function.
+ * @param {String[]} columns The columns.
+ * @returns {Function} The mapper used to map a definition.
  */
-function mapDefinition(dictionary, row, key, columns, isValidEntry) {
-    var definition = JSON.parse(row.json);
-
-    // only map the definition if it is considered valid
-    if (isValidEntry(definition)) {
-        var hash = definition[key];
-        dictionary[hash] = {};
-
-        // map each of the columns
+function getMapperFromColumns(columns) {
+    return function(definition) {
+        var result = {};
         columns.forEach(function(column) {
-            dictionary[hash][column] = definition[column];
+            result[column] = definition[column];
         });
+
+        return result;
     }
+}
+
+/**
+ * Maps a definition, parsing only the required information.
+ * @param {Object} definition The raw definition.
+ * @returns {Object} The parsed definition.
+ */
+function talentGridMapper(definition) {
+    return {
+        nodes: definition.nodes.map(function(node) {
+            return {
+                steps: node.steps.map(function(step) {
+                    return {
+                        nodeStepHash: step.nodeStepHash
+                    };
+                })
+            };
+        })
+    };
 }
 
 /**
@@ -147,8 +186,7 @@ function writeDefinitionFile(definitionResults) {
     })
 
     // determine the contents and open a write stream
-    var contents = "(function() { 'use strict'; var app = angular.module('main').constant('BUNGIE_DEFINITIONS', " + JSON.stringify(definitions, null, 4) + "); })();"
-    //var contents = 'var BUNGIE_DEFINITIONS = ' + JSON.stringify(definitions, null, 4) + ';',
+    var contents = "(function() { 'use strict'; var app = angular.module('main').constant('BUNGIE_DEFINITIONS', " + JSON.stringify(definitions, null, 4) + "); })();",
         stream = fs.createWriteStream(FILE_NAME);
 
     // write the defintion file
