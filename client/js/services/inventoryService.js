@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('main').factory('inventoryService', inventoryService);
-    inventoryService.$inject = ['$q', 'Inventory', 'InventoryAnalysis', 'Item', 'bungieService', 'itemService'];
+    inventoryService.$inject = ['$q', 'Inventory', 'InventoryAnalysis', 'Item', 'ItemStatParser', 'bungieService'];
 
     /**
      * Defines the inventory analyser service.
@@ -10,11 +10,11 @@
      * @param {Function} Inventory The inventory model constructor.
      * @param {Function} InventoryAnalysis The constructor for an inventory analysis.
      * @param {Function} Item The item constructor.
+     * @param {Function} ItemStatParser The item stat parser class.
      * @param {Object} bungieService The Bungie service.
-     * @param {Object} itemService The item service.
      * @returns {Object} The inventory service.
      */
-    function inventoryService($q, Inventory, InventoryAnalysis, Item, bungieService, itemService) {
+    function inventoryService($q, Inventory, InventoryAnalysis, Item, ItemStatParser, bungieService) {
         return {
             // functions
             getInventory: getInventory,
@@ -29,52 +29,26 @@
         function getInventory(character) {
             return bungieService.getInventorySummary(character.membershipType, character.membershipId, character.characterId)
                 .then(bungieService.throwErrors)
-                .then(function(result) {
-                    return getNewInventory(character, result);
-                }).then(loadItems);
+                .then(createInventory);
         }
 
         /**
          * Create a new inventory object based on the inventory summary.
-         * @param {Object} character The character who owns the inventory.
          * @param {Object} result The result of the inventory summary request.
          * @returns {Object} The inventory with the basic information.
          */
-        function getNewInventory(character, result) {
-            var inventory = new Inventory(character, result.data.Response.definitions);
+        function createInventory(result) {
+            var inventory = new Inventory();
 
             // add each item, once we've transformed it slightly
-            result.data.Response.data.items.forEach(function(data) {
-                var item = new Item(data, result.data.Response.definitions);
-                inventory.setItem(item);
+            result.data.Response.data.buckets.Equippable.forEach(function(equippable) {
+                var item = new Item(equippable);
+                if (inventory.setItem(item)) {
+                    ItemStatParser.setStats(item, equippable);
+                }
             });
 
             return inventory;
-        }
-
-        /**
-         * Gets the items for the given inventory.
-         * @param {Object} inventory The inventory to load.
-         * @returns {Object} A promise with the inventory.
-         */
-        function loadItems(inventory) {
-            var statLoaders = [
-                inventory.ghost,
-                inventory.artifact,
-                inventory.classItem,
-                inventory.helmet,
-                inventory.gauntlets,
-                inventory.chest,
-                inventory.legs
-                ].map(function(item) {
-                    return itemService.loadStats(inventory.character, item);
-                });
-
-            // load the stats for each item
-            return $q.all(statLoaders)
-                .then(function() {
-                    return inventory;
-                });
         }
 
         /**

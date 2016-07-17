@@ -48,6 +48,13 @@
         }
     });
 
+    // a map between the statHash (key), and the nodeStepHash, e.g. "Increases Discipline." (value)
+    app.constant('STAT_BONUS_MAP', {
+        1735777505: 1263323987, // disicipline
+        144602215: 1034209669, // intellect
+        4244567218: 193091484 // strength
+    });
+
     // item tiers
     app.constant('ITEM_TIERS', {
         common: 2,

@@ -13,13 +13,8 @@
         /**
          * Constructs a new inventory object used to store items owned by a character.
          * @constructor
-         * @param {Object} character The owner of the inventory.
-         * @param {Object} definitions The accompanying definitions.
          */
-        function Inventory(character, definitions) {
-            this.character = character;
-            this.definitions = definitions;
-
+        function Inventory() {
             // weapons
             this.primaryWeapon = null;
             this.specialWeapon = null;
@@ -39,16 +34,17 @@
 
         /**
          * Sets the item based on it's bucket hash.
-         * @param {Object} item The item to set.
-         * @returns {Object} The modified inventory for chaining.
+         * @param {Object} equippable The equippable item to set.
+         * @returns {Boolean} True when the item was assigned to an inventory slot; otherwise false.
          */
-        Inventory.prototype.setItem = function(item) {
+        Inventory.prototype.setItem = function(equippable) {
             // set the item when we recognise the bucket hash)
-            if (DEFINITIONS.itemBucketHash.hasOwnProperty(item.bucketHash)) {
-                this[DEFINITIONS.itemBucketHash[item.bucketHash]] = item;
+            if (DEFINITIONS.itemBucketHash.hasOwnProperty(equippable.bucketHash)) {
+                this[DEFINITIONS.itemBucketHash[equippable.bucketHash]] = equippable;
+                return true;
             };
 
-            return this;
+            return false;
         };
 
         return Inventory;
