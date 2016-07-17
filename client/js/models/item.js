@@ -2,15 +2,14 @@
     'use strict';
 
     angular.module('main').factory('Item', Model);
-    Model.$inject = ['BUNGIE_DEFINITIONS', 'Range'];
+    Model.$inject = ['BUNGIE_DEFINITIONS'];
 
     /**
      * Defines the Item model.
      * @param {Object} BUNGIE_DEFINITIONS The definitions from the Bungie manifest.
-     * @param {Function} Range The constructor for a range.
      * @returns {Function} The constructor for an item.
      */
-    function Model(BUNGIE_DEFINITIONS, Range) {
+    function Model(BUNGIE_DEFINITIONS) {
         /**
          * Provides a constructor for the Item model.
          * @constructor
@@ -29,10 +28,6 @@
             this.setPrimaryStat(item);
             this.tierType = itemDefinition.tierType;
             this.tierTypeName = itemDefinition.tierTypeName;
-
-            this.discipline = new Range(0, 0, 0);
-            this.intellect = new Range(0, 0, 0);
-            this.strength = new Range(0, 0, 0);
         }
 
         /**
