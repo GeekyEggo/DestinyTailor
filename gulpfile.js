@@ -81,6 +81,15 @@ var config = {
 
 var googleAnalytics = 'google-analytics.js';
 
+// linting
+config.jscs = {
+    src: [
+        config.js + '**/*.js',
+        '!' + config.js + '**/definitions.js',
+        '!' + config.js + '**/' + googleAnalytics
+    ]
+}
+
 // inject
 config.inject = {
     css: {
@@ -121,7 +130,7 @@ config.inject = {
  */
 gulp.task('check', function() {
     return gulp
-        .src(config.inject.js.src)
+        .src(config.jscs.src)
         .pipe($.jscs())
         .pipe($.jscs.reporter());
 });
