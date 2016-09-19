@@ -2,15 +2,16 @@
     'use strict';
 
     angular.module('main').controller('searchController', SearchController);
-    SearchController.$inject = ['$scope', '$state', 'userService'];
+    SearchController.$inject = ['$localStorage', '$scope', '$state', 'userService'];
 
     /**
      * The search controller, primarily used to search for a user's account with Bungie.
+     * @param {Object} $localStorage The local storage provider.
      * @param {Object} $scope The scope of the controller.
      * @param {Object} $state The state provider helper.
      * @param {Object} userService The user service.
      */
-    function SearchController($scope, $state, userService) {
+    function SearchController($localStorage, $scope, $state, userService) {
         var PLATFORM_PSN = true;
 
         // defaults
@@ -18,6 +19,7 @@
         $scope.isSearching = false;
         $scope.name = '';
         $scope.platform = $state.params.membershipTypeName !== 'xbox';
+        $scope.showDlcAlert = $localStorage.showDlcAlert !== false;
 
         /**
          * Searches for a character and updates the account in the user service.
@@ -36,6 +38,13 @@
          */
         $scope.clearError = function() {
             $scope.error = '';
+        };
+
+        /**
+         * Hides the DLC alert.
+         */
+        $scope.hideDlcAlert = function() {
+            $scope.showDlcAlert = $localStorage.showDlcAlert = false;
         };
 
         // register the error handler

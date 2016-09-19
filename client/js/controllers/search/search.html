@@ -30,14 +30,20 @@
                     </button>
                 </span>
             </div>
+
+            <div class="alert alert-warning ng-hide" role="alert" ng-show="showDlcAlert">
+                <button type="button" class="close" ng-click="hideDlcAlert()"><span aria-hidden="true">&times;</span></button>
+                <span class="glyphicon glyphicon-info-sign"></span>
+                <p>Guardians, the Iron Lords of Destiny are re-defining stat calculations in preparation for battle. Once they reveal more, we'll update our systems to continue in helping you get the most from your gear. Until then, stats may appear a little unusual. Thank you for your support, and enjoy Rise of Iron! <em>- GeekyEggo</em></p>
+            </div>
         </div>
     </div>
     <div class="row top-buffer ng-hide" ng-show="error">
         <div class="col-md-8 col-md-offset-2">
             <div class="alert alert-danger" role="alert">
+                <button type="button" class="close" ng-click="clearError()"><span aria-hidden="true">&times;</span></button>
                 <span class="glyphicon glyphicon-thumbs-down"></span>
                 <span>{{ error }}</span>
-                <button type="button" class="close" ng-click="clearError()"><span aria-hidden="true">&times;</span></button>
             </div>
         </div>
     </div>
