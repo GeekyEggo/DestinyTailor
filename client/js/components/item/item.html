@@ -1,4 +1,4 @@
-<div class="item" ng-class="getTierTypeCssClass(data.tierType)">
+<div class="item" ng-if="!data.isClassified" ng-class="getTierTypeCssClass(data.tierType)">
     <div class="item__header media" ng-class="data.primaryStatName">
         <h3 class="media-heading item__name">{{data.name}}</h3>
         <div class="media-left item__icon-wrapper">

@@ -17,17 +17,26 @@
          */
         function Item(equippable) {
             var item = equippable.items[0];
-            var itemDefinition = BUNGIE_DEFINITIONS.ARMOR.hasOwnProperty(item.itemHash) ? BUNGIE_DEFINITIONS.ARMOR[item.itemHash] : {};
 
-            this.itemId = item.itemInstanceId;
-            this.name = itemDefinition.itemName;
+            // ensure the item isn't classified
+            if (item !== undefined) {
+                var itemDefinition = BUNGIE_DEFINITIONS.ARMOR.hasOwnProperty(item.itemHash) ? BUNGIE_DEFINITIONS.ARMOR[item.itemHash] : {};
+
+                this.itemId = item.itemInstanceId;
+                this.name = itemDefinition.itemName;
+                this.itemTypeName = itemDefinition.itemTypeName;
+
+                this.icon = itemDefinition.icon;
+                this.setPrimaryStat(item);
+                this.tierType = itemDefinition.tierType;
+                this.tierTypeName = itemDefinition.tierTypeName;
+
+                this.isClassified = false;
+            } else {
+                this.isClassified = true;
+            }
+
             this.bucketHash = equippable.bucketHash;
-            this.itemTypeName = itemDefinition.itemTypeName;
-
-            this.icon = itemDefinition.icon;
-            this.setPrimaryStat(item);
-            this.tierType = itemDefinition.tierType;
-            this.tierTypeName = itemDefinition.tierTypeName;
         }
 
         /**

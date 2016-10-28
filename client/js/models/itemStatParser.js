@@ -66,10 +66,12 @@
         ItemStatParser.prototype.getBaseStatRange = function(statHash) {
             statHash = parseInt(statHash);
 
-            // determine the current base stat value
-            for (var i = 0; i < this.rawData.stats.length; i++) {
-                if (this.rawData.stats[i].statHash === statHash) {
-                    return new Range(this.rawData.stats[i].value, this.rawData.stats[i].value, this.rawData.stats[i].value);
+            if (this.rawData) {
+                // determine the current base stat value
+                for (var i = 0; i < this.rawData.stats.length; i++) {
+                    if (this.rawData.stats[i].statHash === statHash) {
+                        return new Range(this.rawData.stats[i].value, this.rawData.stats[i].value, this.rawData.stats[i].value);
+                    }
                 }
             }
 
