@@ -9,7 +9,7 @@ var env = dotenv.config({
 module.exports = {
     api: {
         key: process.env.API_KEY || '',
-        url: process.env.API_URL || '',
+        url: process.env.API_URL || 'https://www.bungie.net',
         useProxy: process.env.USE_PROXY === 'false' ? false : true /* default true */
     },
     cache: {
