@@ -1,13 +1,14 @@
-var gulp = require('gulp');
 var del = require('del');
+var gulp = require('gulp');
 var merge = require('merge-stream');
+var serverConfig = require('./server/config');
 var wiredep = require('wiredep').stream;
 var $ = require('gulp-load-plugins')({ lazy: true });
 
 var client = 'client/';
 var temp = './.tmp/';
 
-var config = {
+var config = { 
     // local files
     css: client + 'css/',
     html: client + 'index.html',
@@ -81,6 +82,15 @@ var config = {
 
 var googleAnalytics = 'google-analytics.js';
 
+// client config
+config.clientConfig = {
+    src: config.js + 'app.config.tmpl.js',
+    dest: {
+        name: 'app.config.js',
+        path: config.js
+    } 
+}
+
 // linting
 config.jscs = {
     src: [
@@ -135,7 +145,6 @@ gulp.task('check', function() {
         .pipe($.jscs.reporter());
 });
 
-
 /**
  * Cleans the distribution folder.
  */
@@ -143,6 +152,20 @@ gulp.task('clean', function() {
     var delConfig = [config.dist, config.temp];
     return del(delConfig);
 });
+
+/**
+ * Configures the client environment.
+ */
+gulp.task('config', function() {
+    var data = {
+        apiKey: serverConfig.apiKey
+    };
+
+    gulp.src(config.clientConfig.src)
+        .pipe($.replace('${config}', JSON.stringify(data)))
+        .pipe($.rename(config.clientConfig.dest.name))
+        .pipe(gulp.dest(config.clientConfig.dest.path));
+})
 
 /**
  * Moves all required fonts to the build folder.
