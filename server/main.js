@@ -25,6 +25,17 @@ function main() {
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use(cookieParser());
 
+    // setup the www redirect
+    app.set('trust proxy', true);
+    app.use(function(req, res, next) {
+        if (req.headers.host.slice(0, 4) === 'www.') {
+            var newHost = req.headers.host.slice(4);
+            return res.redirect(301, req.protocol + '://' + newHost + req.originalUrl);
+        }
+
+        next();
+    });
+
     // setup the api routes
     app.use('/Platform/Destiny/*?', function(req, res) {
         var options = {
