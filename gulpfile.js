@@ -84,7 +84,7 @@ var googleAnalytics = 'google-analytics.js';
 
 // client config
 config.clientConfig = {
-    src: config.js + 'app.config.tmpl.js',
+    src: config.js + 'app.config.js.tmpl',
     dest: {
         name: 'app.config.js',
         path: config.js
@@ -116,6 +116,7 @@ config.inject = {
         ],
         order: [
             '**/app.module.js',
+            '**/app.config.js',
             '**/app.constants.js',
             '**/app.routes.js',
             '**/shared/*.js',
@@ -156,9 +157,9 @@ gulp.task('clean', function() {
 /**
  * Configures the client environment.
  */
-gulp.task('config', function() {
+gulp.task('client-config', function() {
     var data = {
-        apiKey: serverConfig.apiKey
+        api: serverConfig.api
     };
 
     gulp.src(config.clientConfig.src)
@@ -181,7 +182,7 @@ gulp.task('fonts', ['clean'], function() {
  * Injects the dependencies into the html.
  * @returns {Object} The stream.
  */
-gulp.task('inject', function() {
+gulp.task('inject', ['client-config'], function() {
     return gulp
         .src(config.html)
         // bower

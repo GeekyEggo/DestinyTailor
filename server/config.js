@@ -7,7 +7,10 @@ var env = dotenv.config({
 
 // export the configuration settings
 module.exports = {
-    apiKey: process.env.API_KEY || '',
+    api: {
+        key: process.env.API_KEY || '',
+        url: process.env.API_URL || ''
+    },
     cache: {
         stdTTL: 0,
         useClones: false

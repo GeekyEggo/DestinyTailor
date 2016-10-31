@@ -28,12 +28,11 @@
          * @returns {Object} The result of requesting the account summary.
          */
         function getAccountSummary(membershipType, membershipId) {
-            return httpUtils.get(
-                '/Platform/Destiny/{membershipType}/Account/{membershipId}/',
-                {
-                    membershipType: membershipType,
-                    membershipId: membershipId
-                });
+            return get('/Platform/Destiny/{membershipType}/Account/{membershipId}/',
+            {
+                membershipType: membershipType,
+                membershipId: membershipId
+            });
         }
 
         /**
@@ -44,13 +43,12 @@
          * @returns {Object} The result of requesting the inventory summary.
          */
         function getInventorySummary(membershipType, membershipId, characterId) {
-            return httpUtils.get(
-                '/Platform/Destiny/{membershipType}/Account/{membershipId}/Character/{characterId}/Inventory/',
-                {
-                    membershipType: membershipType,
-                    membershipId: membershipId,
-                    characterId: characterId
-                });
+            return get('/Platform/Destiny/{membershipType}/Account/{membershipId}/Character/{characterId}/Inventory/',
+            {
+                membershipType: membershipType,
+                membershipId: membershipId,
+                characterId: characterId
+            });
         }
 
         /**
@@ -62,14 +60,13 @@
          * @returns {Object} The result of requesting the item details.
          */
         function getItemDetails(membershipType, membershipId, characterId, itemInstanceId) {
-            return httpUtils.get(
-                '/Platform/Destiny/{membershipType}/Account/{membershipId}/Character/{characterId}/Inventory/{itemInstanceId}/',
-                {
-                    membershipType: membershipType,
-                    membershipId: membershipId,
-                    characterId: characterId,
-                    itemInstanceId: itemInstanceId
-                });
+            return get('/Platform/Destiny/{membershipType}/Account/{membershipId}/Character/{characterId}/Inventory/{itemInstanceId}/',
+            {
+                membershipType: membershipType,
+                membershipId: membershipId,
+                characterId: characterId,
+                itemInstanceId: itemInstanceId
+            });
         }
 
         /**
@@ -79,12 +76,21 @@
          * @returns {Object} The result of the search.
          */
         function searchDestinyPlayer(membershipType, displayName) {
-            return httpUtils.get(
-                 '/Platform/Destiny/SearchDestinyPlayer/{membershipType}/{searchCriteria}/',
-                 {
-                     membershipType: membershipType,
-                     searchCriteria: encodeURIComponent(displayName)
-                 });
+            return get('/Platform/Destiny/SearchDestinyPlayer/{membershipType}/{searchCriteria}/',
+            {
+                membershipType: membershipType,
+                searchCriteria: encodeURIComponent(displayName)
+            });
+        }
+
+        /**
+         * Provides a wrapper for loading a request from Bungie.
+         * @param {String} method The method / endpoint being called.
+         * @param {Object} params The parameters to pass.
+         * @returns {Object} The response, as a promise.
+         */
+        function get(method, params) {
+            return httpUtils.get(method, params);
         }
 
         /**

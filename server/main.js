@@ -42,7 +42,7 @@ function main() {
             url: 'https://www.bungie.net' + req.originalUrl,
             headers: {
                 'Content-Type': 'application/json',
-                'X-API-KEY': config.apiKey
+                'X-API-KEY': config.api.key
             }
         };
 
