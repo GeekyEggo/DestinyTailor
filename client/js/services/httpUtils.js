@@ -40,11 +40,12 @@
          * Executes a get request.
          * @param {String} url The variablised endpoint URL.
          * @param {Object} params The parameters to inject into the URL.
+         * @param {Object} options The options.
          * @returns {Object} The response.
          */
-        function get(url, params) {
+        function get(url, params, options) {
             var url = buildUrl(url, params);
-            return $http.get(url);
+            return $http.get(url, options);
         };
     }
 })();

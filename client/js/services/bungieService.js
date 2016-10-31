@@ -2,14 +2,15 @@
     'use strict';
 
     angular.module('main').factory('bungieService', bungieService);
-    bungieService.$inject = ['httpUtils'];
+    bungieService.$inject = ['httpUtils', 'config'];
 
     /**
      * Defines the Bungie service, used to communicate with Bungie.
      * @param {Object} httpUtils Provides HTTP utilities.
+     * @param {Object} config The client configuration.
      * @returns {Object} The inventory service.
      */
-    function bungieService(httpUtils) {
+    function bungieService(httpUtils, config) {
         return {
             // functions
             getAccountSummary: getAccountSummary,
@@ -90,7 +91,19 @@
          * @returns {Object} The response, as a promise.
          */
         function get(method, params) {
-            return httpUtils.get(method, params);
+            if (config.api.useProxy) {
+                return httpUtils.get(method, params)
+            } else {
+                var url = config.api.url + method;
+                var options = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-KEY': config.api.key
+                    }
+                };
+
+                return httpUtils.get(url, params, options);
+            }
         }
 
         /**
