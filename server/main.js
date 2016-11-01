@@ -60,6 +60,7 @@ function main() {
             });
 
             // serve the assets with caching, and register the SPA handler
+            serveConfig();
             serveStatic('../dist/', config.contentMaxAge);
             app.use('/js/**/*.html', function(req, res) {
                 send404(req, res, 'Unable to load Angular view separately.');
@@ -71,6 +72,7 @@ function main() {
             app.use(logger('dev'));
 
             // serve the assets and register the SPA handler
+            serveConfig();
             serveStatic('../client/');
             serveStatic('../');
             serveSpaHandler('../client/index.html');
@@ -84,6 +86,15 @@ function main() {
             error: config.env === 'dev' ? err : {}
         });
     });
+
+    /**
+     * Register the configuration renderer. 
+     */
+    function serveConfig() {
+        app.get('/js/app.config.js', function(req, res) {
+            res.render('config', config);
+        });
+    }
 
     /**
      * Registers the SPA handler.

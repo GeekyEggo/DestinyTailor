@@ -1,0 +1,14 @@
+(function() {
+    'use strict';
+
+    var app = angular.module('main');
+
+    // define the constants
+    app.constant('config', {
+        api: {
+            key: '{{{api.key}}}',
+            url: '{{{api.url}}}',
+            useProxy: {{{api.useProxy}}}
+        }
+    }); 
+})();

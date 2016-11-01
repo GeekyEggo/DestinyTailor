@@ -33,7 +33,6 @@ node_modules
 /.tmp
 /dist
 /typings
-/client/js/app.config.js
 
 # Manifest assets
 /manifest/en/*
