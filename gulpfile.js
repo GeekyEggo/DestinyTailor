@@ -1,7 +1,6 @@
 var del = require('del');
 var gulp = require('gulp');
 var merge = require('merge-stream');
-var serverConfig = require('./server/config');
 var wiredep = require('wiredep').stream;
 var $ = require('gulp-load-plugins')({ lazy: true });
 
@@ -82,15 +81,6 @@ var config = {
 
 var googleAnalytics = 'google-analytics.js';
 
-// client config
-config.clientConfig = {
-    src: config.js + 'app.config.js.tmpl',
-    dest: {
-        name: 'app.config.js',
-        path: config.js
-    } 
-}
-
 // linting
 config.jscs = {
     src: [
@@ -155,20 +145,6 @@ gulp.task('clean', function() {
 });
 
 /**
- * Configures the client environment.
- */
-gulp.task('client-config', function() {
-    var data = {
-        api: serverConfig.api
-    };
-
-    gulp.src(config.clientConfig.src)
-        .pipe($.replace('${config}', JSON.stringify(data)))
-        .pipe($.rename(config.clientConfig.dest.name))
-        .pipe(gulp.dest(config.clientConfig.dest.path));
-})
-
-/**
  * Moves all required fonts to the build folder.
  * @returns {Object} The stream.
  */
@@ -182,7 +158,7 @@ gulp.task('fonts', ['clean'], function() {
  * Injects the dependencies into the html.
  * @returns {Object} The stream.
  */
-gulp.task('inject', ['client-config'], function() {
+gulp.task('inject', function() {
     return gulp
         .src(config.html)
         // bower
