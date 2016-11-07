@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('main').factory('inventoryService', inventoryService);
-    inventoryService.$inject = ['$q', 'Inventory', 'InventoryAnalysis', 'Item', 'ItemStatParser', 'bungieService'];
+    inventoryService.$inject = ['$q', 'Inventory', 'InventoryAnalysis', 'Item', 'ItemStatCalculator', 'bungieService'];
 
     /**
      * Defines the inventory analyser service.
@@ -10,11 +10,11 @@
      * @param {Function} Inventory The inventory model constructor.
      * @param {Function} InventoryAnalysis The constructor for an inventory analysis.
      * @param {Function} Item The item constructor.
-     * @param {Function} ItemStatParser The item stat parser class.
+     * @param {Function} ItemStatCalculator The item stat calculator class.
      * @param {Object} bungieService The Bungie service.
      * @returns {Object} The inventory service.
      */
-    function inventoryService($q, Inventory, InventoryAnalysis, Item, ItemStatParser, bungieService) {
+    function inventoryService($q, Inventory, InventoryAnalysis, Item, ItemStatCalculator, bungieService) {
         return {
             // functions
             getInventory: getInventory,
@@ -44,7 +44,7 @@
             result.data.Response.data.buckets.Equippable.forEach(function(equippable) {
                 var item = new Item(equippable);
                 if (inventory.setItem(item)) {
-                    ItemStatParser.setStats(item, equippable);
+                    var statCalculator = new ItemStatCalculator(item, equippable);
                 }
             });
 

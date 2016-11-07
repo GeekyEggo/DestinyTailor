@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    angular.module('main').factory('ItemStatParser', Model);
+    angular.module('main').factory('ItemStatCalculator', Model);
     Model.$inject = ['BUNGIE_DEFINITIONS', 'DEFINITIONS', 'STAT_BONUS_MAP', 'Range'];
 
     /**
@@ -13,34 +13,27 @@
      */
     function Model(BUNGIE_DEFINITIONS, DEFINITIONS, STAT_BONUS_MAP, Range) {
         /**
-         * Provides a stat parser for the given item.
+         * Provides a stat calculator for the given item.
          * @constructor
          * @param {Object} item The item.
          * @param {Object} equippable The raw data from the Bungie response.
          */
-        function ItemStatParser(item, equippable) {
+        function ItemStatCalculator(item, equippable) {
             this.item = item;
             this.rawData = equippable.items[0];
-        }
 
-        /**
-         * Static method for assigning all stats to a given item.
-         * @param {Object} item The item.
-         * @param {Object} equippable The raw item as provided by Bungie.
-         */
-        ItemStatParser.setStats = function(item, equippable) {
-            var parser = new ItemStatParser(item, equippable);
+            // set the 
             for (var statHash in DEFINITIONS.stat) {
-                item[DEFINITIONS.stat[statHash]] = parser.getStatRange(statHash);
+                item[DEFINITIONS.stat[statHash]] = this.getStatRange(statHash);
             }
-        };
+        }
 
         /**
          * Gets the stat range for the given stat hash.
          * @param {Number} statHash The stat hash.
          * @returns {Object|null} The range of stats.
          */
-        ItemStatParser.prototype.getStatRange = function(statHash) {
+        ItemStatCalculator.prototype.getStatRange = function(statHash) {
             // get the stat range, and return nothing when we have nothing
             var range = this.getBaseStatRange(statHash);
             if (!range) {
@@ -63,7 +56,7 @@
          * @param {Number} statHash The stat hash.
          * @returns {Object|null} The base values for the stat, represented as a range.
          */
-        ItemStatParser.prototype.getBaseStatRange = function(statHash) {
+        ItemStatCalculator.prototype.getBaseStatRange = function(statHash) {
             statHash = parseInt(statHash);
 
             if (this.rawData) {
@@ -84,7 +77,7 @@
          * @param {Object} range The current stat range.
          * @param {Object} talentGrid The talent grid containing the perks for the item.
          */
-        ItemStatParser.prototype.assignStatBonuses = function(statHash, range, talentGrid) {
+        ItemStatCalculator.prototype.assignStatBonuses = function(statHash, range, talentGrid) {
             this.rawData.nodes.forEach(function(node, i) {
                 if (talentGrid.nodes[i].steps[node.stepIndex].nodeStepHash === STAT_BONUS_MAP[statHash]) {
                     var bonus = this.getStatBonus();
@@ -104,7 +97,7 @@
          * @author DestinyItemManager team (for the implementation)
          * @returns {Number} The stat bonus.
          */
-        ItemStatParser.prototype.getStatBonus = function() {
+        ItemStatCalculator.prototype.getStatBonus = function() {
             switch (DEFINITIONS.itemBucketHash[this.item.bucketHash]) {
                 case 'helmet':
                     return this.item.primaryStat < 292 ? 15
@@ -158,6 +151,6 @@
             return 0;
         };
 
-        return ItemStatParser;
+        return ItemStatCalculator;
     };
 })();
