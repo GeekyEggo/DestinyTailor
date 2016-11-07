@@ -78,16 +78,17 @@
          * @param {Object} talentGrid The talent grid containing the perks for the item.
          */
         ItemStatCalculator.prototype.assignStatBonuses = function(statHash, range, talentGrid) {
+            var bonus = this.getStatBonus();
+
             this.rawData.nodes.forEach(function(node, i) {
                 if (talentGrid.nodes[i].steps[node.stepIndex].nodeStepHash === STAT_BONUS_MAP[statHash]) {
-                    var bonus = this.getStatBonus();
                     if (node.isActivated) {
                         range.min -= bonus;
                     } else {
                         range.max += bonus;
                     }
                 }
-            }, this);
+            });
         };
 
         /**
