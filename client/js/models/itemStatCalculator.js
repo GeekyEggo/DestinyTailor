@@ -106,12 +106,12 @@
             for (var statHash in DEFINITIONS.stat) {
                 var statRange = this.item[DEFINITIONS.stat[statHash]];
                 if (statRange) {
-                    scaledStatSum += this.getMaxBaseStat(statRange.min);
+                    scaledStatSum += statRange.min;
                 }
             }
 
             // validate we have a stat sum to work with
-            if (scaledStatSum == 0) {
+            if (scaledStatSum === 0) {
                 this.item.quality = 0;
             } else {
                 // work out the quality percentage
