@@ -21,10 +21,15 @@
         function ItemStatCalculator(item, equippable) {
             this.item = item;
             this.rawData = equippable.items[0];
+        }
 
-            // set the 
+        /**
+         * Sets the stats on the item.
+         */
+        ItemStatCalculator.prototype.setStats = function() {
+            // set the stats 
             for (var statHash in DEFINITIONS.stat) {
-                item[DEFINITIONS.stat[statHash]] = this.getStatRange(statHash);
+                this.item[DEFINITIONS.stat[statHash]] = this.getStatRange(statHash);
             }
         }
 
@@ -92,6 +97,88 @@
         };
 
         /**
+         * Sets the percentage quality for the item associated with the calculator.
+         */
+        ItemStatCalculator.prototype.setQuality = function() {
+            var scaledStatSum = 0;
+
+            // determine the combined value of the stats, scaled to max light
+            for (var statHash in DEFINITIONS.stat) {
+                var statRange = this.item[DEFINITIONS.stat[statHash]];
+                if (statRange) {
+                    scaledStatSum += this.getMaxBaseStat(statRange.min);
+                }
+            }
+
+            // validate we have a stat sum to work with
+            if (scaledStatSum == 0) {
+                this.item.quality = 0;
+            } else {
+                // work out the quality percentage
+                var qualityPercentage = (100 / (this.getMaxBaseStat() * 2)) * scaledStatSum;
+                this.item.quality = Math.min(100, Math.floor(qualityPercentage));
+            }
+        }
+
+        /**
+         * Gets the scaled stat values for a base value, and the items current light level.
+         * @author /u/cornman0101 (https://www.reddit.com/r/DestinyTheGame/comments/4m417m/final_infusion_stat_calculator_from_200335_light/)
+         * @author /u/iihavetoes (https://www.reddit.com/r/DestinyTheGame/comments/4geixn/a_shift_in_how_we_view_stat_infusion_12tier/)
+         * @author DestinyItemManager (https://github.com/DestinyItemManager/DIM/blob/092eaf2738ba009e2f68164263a09e4f3fc7a532/app/scripts/services/dimStoreService.factory.js#L1077)
+         * @param {Number} statValue The base value of the stat.
+         * @returns {Object} The scaled stat.
+         */
+        ItemStatCalculator.prototype.getScaledStat = function(statValue) {
+            // based on /u/cornman0101's findings and calculations (with thanks to DIM)
+            var adjustValue = function(lightLevel) {
+                if (lightLevel > 300) {
+                    return (0.2546 * lightLevel) - 23.825;
+                } if (lightLevel > 200) {
+                    return (0.1801 * lightLevel) - 1.4612;
+                } else {
+                    return -1;
+                }
+            }
+            
+            // calculate based on a maximum of 335, regardless of higher
+            var maxLightLevel = 335;
+            var itemLightLevel = Math.min(maxLightLevel, this.item.primaryStat);
+
+            return Math.floor((statValue) * (adjustValue(maxLightLevel) / adjustValue(itemLightLevel)));
+        }
+
+        /**
+         * Gets the base maximum [split] stat value, for the current item, based on the items type.
+         * @author DIM (https://github.com/DestinyItemManager/DIM/blob/092eaf2738ba009e2f68164263a09e4f3fc7a532/app/scripts/services/dimStoreService.factory.js#L1115)
+         * @returns {Number} The base stats. 
+         */
+        ItemStatCalculator.prototype.getMaxBaseStat = function() {
+            switch (DEFINITIONS.itemBucketHash[this.item.bucketHash]) {
+                case 'helmet':
+                    return 46; // bungie reports 48, but i've only seen 46 (DIM)
+
+                case 'gauntlets':
+                    return 41; // bungie reports 43, but i've only seen 41 (DIM)
+
+                case 'chest':
+                    return 61;
+
+                case 'legs':
+                    return 56;
+
+                case 'classItem':
+                case 'ghost':
+                    return 25;
+
+                case 'artifact':
+                    return 38;
+            }
+
+            console.warn('item base stat not found', DEFINITIONS.itemBucketHash[this.item.bucketHash]);
+            return null;
+        };
+
+        /**
          * Gets the stat bonus, based on the item bucket type, and the light level (primary stat).
          * @author /u/iihavetoes (for the bonuses at each level)
          * @author /u/tehdaw (for the spreadsheet with bonuses, https://docs.google.com/spreadsheets/d/1YyFDoHtaiOOeFoqc5Wc_WC2_qyQhBlZckQx5Jd4bJXI/edit?pref=2&pli=1#gid=0)
@@ -148,7 +235,7 @@
                         : 42;
             }
 
-            console.warn('item bonus not found', type);
+            console.warn('item stat bonus stat not found', DEFINITIONS.itemBucketHash[this.item.bucketHash]);
             return 0;
         };
 

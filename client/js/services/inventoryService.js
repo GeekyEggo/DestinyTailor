@@ -45,6 +45,8 @@
                 var item = new Item(equippable);
                 if (inventory.setItem(item)) {
                     var statCalculator = new ItemStatCalculator(item, equippable);
+                    statCalculator.setStats();
+                    statCalculator.setQuality();
                 }
             });
 
