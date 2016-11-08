@@ -25,12 +25,15 @@
 
         /**
          * Sets the stats on the item.
+         * @returns {Object} This stat calculator.
          */
         ItemStatCalculator.prototype.setStats = function() {
             // set the stats 
             for (var statHash in DEFINITIONS.stat) {
                 this.item[DEFINITIONS.stat[statHash]] = this.getStatRange(statHash);
             }
+
+            return this;
         }
 
         /**
@@ -100,23 +103,35 @@
          * Sets the percentage quality for the item associated with the calculator.
          */
         ItemStatCalculator.prototype.setQuality = function() {
-            var scaledStatSum = 0;
+            // gets the quality as a percent, based on the value and the maximum
+            function getQuality(value, max) {
+                var quality = (100 / max) * value;
+                return Math.min(100, Math.floor(quality));    
+            }
 
-            // determine the combined value of the stats, scaled to max light
+            var scaledStatSum = 0;
+            var maxBaseStat = this.getMaxBaseStat();
+
+            // determine the summed value of the stats, scaled to max light
             for (var statHash in DEFINITIONS.stat) {
                 var statRange = this.item[DEFINITIONS.stat[statHash]];
+
                 if (statRange) {
-                    scaledStatSum += statRange.min;
+                    // get the scaled stat, and add it to the sum
+                    var scaledStat = this.getScaledStat(statRange.min);
+                    scaledStatSum += scaledStat;
+
+                    // determine the quality of the item, handling pure stat items
+                    var maxStatValue = scaledStat <= maxBaseStat ? maxBaseStat : maxBaseStat * 2;
+                    statRange.quality = getQuality(scaledStat, maxStatValue);
                 }
             }
 
-            // validate we have a stat sum to work with
+            // determine the quality, based on the sum of the scaled based stats
             if (scaledStatSum === 0) {
                 this.item.quality = 0;
             } else {
-                // work out the quality percentage
-                var qualityPercentage = (100 / (this.getMaxBaseStat() * 2)) * scaledStatSum;
-                this.item.quality = Math.min(100, Math.floor(qualityPercentage));
+                this.item.quality = getQuality(scaledStatSum, maxBaseStat * 2);
             }
         }
 
