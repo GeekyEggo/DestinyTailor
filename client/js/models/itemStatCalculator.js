@@ -189,7 +189,6 @@
                     return 38;
             }
 
-            console.warn('item base stat not found', DEFINITIONS.itemBucketHash[this.item.bucketHash]);
             return null;
         };
 
@@ -250,7 +249,6 @@
                         : 42;
             }
 
-            console.warn('item stat bonus stat not found', DEFINITIONS.itemBucketHash[this.item.bucketHash]);
             return 0;
         };
 
